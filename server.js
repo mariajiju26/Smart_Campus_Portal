@@ -8,16 +8,19 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '50mb' })); 
 
-// 1. MongoDB Connection
-mongoose.connect('mongodb://127.0.0.1:27017/lost_found_db')
+// 1. Fixed MongoDB Connection for Deployment
+// Uses MONGO_URI from Render Environment Variables
+const dbURI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/lost_found_db';
+
+mongoose.connect(dbURI)
     .then(() => console.log("✅ Connected to MongoDB Database!"))
     .catch(err => console.error("❌ Database connection error:", err));
 
-// 2. Updated Data Schema
+// 2. Data Schema
 const itemSchema = new mongoose.Schema({
     type: { type: String, required: true },
-    reporterName: String,  // Added
-    reporterEmail: String, // Added
+    reporterName: String,
+    reporterEmail: String,
     name: { type: String, required: true },
     category: String,
     location: String,
@@ -56,7 +59,7 @@ app.post('/api/items', async (req, res) => {
 // PATCH: Update status
 app.patch('/api/items/:id', async (req, res) => {
     try {
-        const item = await Item.findById(req.params.id); // Better way: find by ID directly
+        const item = await Item.findById(req.params.id);
         if (item) {
             item.status = req.body.status;
             await item.save();
@@ -70,7 +73,8 @@ app.patch('/api/items/:id', async (req, res) => {
 });
 
 // 4. Start Server
-const PORT = 3000;
+// Use process.env.PORT for Render or 3000 for local
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`🚀 Server running at http://localhost:${PORT}`);
+    console.log(`🚀 Server running on port ${PORT}`);
 });
