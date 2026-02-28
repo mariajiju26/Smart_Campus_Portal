@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Book Venue</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="navbar">
+    <h2>Book Campus Venue</h2>
+    <button onclick="goBack()">Back</button>
+</div>
+
+<div class="container">
+    <div class="card">
+
+        <form id="bookingForm">
+
+            <!-- Venue Dropdown -->
+            <select id="venue" required>
+                <option value="">Select Venue</option>
+                <option>Seminar Hall 1</option>
+                <option>Seminar Hall 2</option>
+                <option>Seminar Hall 3</option>
+                <option>Seminar Hall 4</option>
+                <option>OAT</option>
+                <option>Classroom</option>
+                <option>Other</option>
+            </select>
+
+            <!-- Extra input for Classroom / Other -->
+            <input type="text" id="extraInput"
+                   placeholder="Enter Classroom Number or Specify Venue"
+                   style="display:none;">
+
+            <input type="text" id="event" placeholder="Event Name" required>
+
+            <input type="date" id="date" required>
+            <input type="time" id="start" required>
+            <input type="time" id="end" required>
+
+            <button type="submit" class="btn">Confirm Booking</button>
+
+        </form>
+
+    </div>
+</div>
+
+<script>
+
+// 🔐 Protect page
+if (!localStorage.getItem("currentUser")) {
+    window.location = "login.html";
+}
+
+function goBack(){
+    window.location = "dashboard.html";
+}
+
+let venueSelect = document.getElementById("venue");
+let extraInput = document.getElementById("extraInput");
+
+// Show extra input when needed
+venueSelect.addEventListener("change", function() {
+    if (this.value === "Classroom" || this.value === "Other") {
+        extraInput.style.display = "block";
+        extraInput.required = true;
+    } else {
+        extraInput.style.display = "none";
+        extraInput.required = false;
+        extraInput.value = "";
+    }
+});
+
+document.getElementById("bookingForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    let currentUser = localStorage.getItem("currentUser");
+
+    let venue = venueSelect.value.trim();
+    let extra = extraInput.value.trim();
+    let event = document.getElementById("event").value.trim();
+    let date = document.getElementById("date").value;
+    let start = document.getElementById("start").value;
+    let end = document.getElementById("end").value;
+
+    if (!venue || !event || !date || !start || !end) {
+        alert("Please fill all fields.");
+        return;
+    }
+
+    if (start >= end) {
+        alert("End time must be after start time.");
+        return;
+    }
+
+    // Modify venue for Classroom / Other
+    if (venue === "Classroom") {
+        venue = "Classroom - " + extra;
+    }
+
+    if (venue === "Other") {
+        venue = "Other - " + extra;
+    }
+
+    let bookings = JSON.parse(localStorage.getItem("bookings")) || [];
+
+    // Conflict checking
+    let conflict = bookings.find(b =>
+        b.venue === venue &&
+        b.date === date &&
+        b.status !== "Cancelled" &&
+        !(end <= b.start || start >= b.end)
+    );
+
+    if (conflict) {
+        alert("This venue is already booked for that time.");
+        return;
+    }
+
+    // Save booking (IMPORTANT: includes user)
+    bookings.push({
+        user: currentUser,
+        venue: venue,
+        event: event,
+        date: date,
+        start: start,
+        end: end,
+        status: "Booked"
+    });
+
+    localStorage.setItem("bookings", JSON.stringify(bookings));
+
+    alert("Booking Confirmed Successfully!");
+    window.location.href = "bookings.html";
+});
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>View Items</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
+</head>
+<body>
+
+<div class="navbar">
+    <h2>All Items</h2>
+    <button onclick="goBack()">Back</button>
+</div>
+
+<div class="container">
+    <div id="list"></div>
+</div>
+
+<script>
+if (!localStorage.getItem("currentUser")) {
+    window.location = "login.html";
+}
+
+async function loadItems() {
+    let list = document.getElementById("list");
+    list.innerHTML = "<p style='text-align:center;'>Loading items from server...</p>";
+
+    try {
+        const response = await fetch('http://localhost:3000/api/items');
+        const items = await response.json();
+        
+        list.innerHTML = "";
+
+        if (items.length === 0) {
+            list.innerHTML = "<p style='text-align:center;'>No items reported yet.</p>";
+            return;
+        }
+
+        const model = await mobilenet.load();
+
+        for (let index = 0; index < items.length; index++) {
+            let item = items[index];
+            let aiMatchFound = false;
+            let aiLabel = "";
+
+            if (item.type === "Found" && item.image) {
+                const img = new Image();
+                img.src = item.image;
+                await new Promise(res => img.onload = res);
+                
+                const predictions = await model.classify(img);
+                aiLabel = predictions[0].className.toLowerCase();
+
+                aiMatchFound = items.some(other => 
+                    other.type === "Lost" && 
+                    (other.name.toLowerCase().includes(aiLabel) || 
+                     item.name.toLowerCase() === other.name.toLowerCase())
+                );
+            }
+
+            let textMatch = items.find(other =>
+                other.type !== item.type &&
+                other.status !== "Claimed" &&
+                other.name.toLowerCase() === item.name.toLowerCase()
+            );
+
+            let card = document.createElement("div");
+            card.className = "item-card";
+            card.innerHTML = `
+                <b class="status-tag ${item.type.toLowerCase()}">${item.type.toUpperCase()}</b>
+                <p><b>Name:</b> ${item.name}</p>
+                
+                <p><b>Reported By:</b> ${item.reporterName || 'Anonymous'}</p>
+                <p><b>Contact:</b> <a href="mailto:${item.reporterEmail}">${item.reporterEmail || 'N/A'}</a></p>
+                
+                <p><b>Location:</b> ${item.location}</p>
+                <p><b>Description:</b> ${item.description}</p>
+                <p><b>Status:</b> ${item.status || 'Pending'}</p>
+
+                ${item.image ? `<img src="${item.image}" style="width:100%; border-radius:8px; margin:10px 0;">` : ``}
+
+                ${textMatch || aiMatchFound ? `<p style="color:orange;"><b>⚠️ Match Detected!</b> ${aiMatchFound ? '(AI Verified)' : ''}</p>` : ``}
+
+                ${item.type === "Found" && item.status !== "Claimed" ? 
+                    `<button class="btn" onclick="markClaimed('${item._id}')">Mark as Claimed</button>` : ``}
+            `;
+            list.appendChild(card);
+        }
+    } catch (err) {
+        list.innerHTML = "<p style='color:red; text-align:center;'>Server offline. Please run 'node server.js'.</p>";
+    }
+}
+
+async function markClaimed(id) {
+    if (confirm("Has the lost person claimed this item?")) {
+        try {
+            await fetch(`http://localhost:3000/api/items/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: "Claimed" })
+            });
+            alert("Status updated on server.");
+            loadItems();
+        } catch (err) {
+            alert("Failed to update status.");
+        }
+    }
+}
+
+function goBack() {
+    window.location = "dashboard.html";
+}
+
+loadItems();
+</script>
+
+</body>
+</html>

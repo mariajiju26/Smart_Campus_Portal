@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Campus Portal</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="navbar">
+    <h2>Smart Campus Portal</h2>
+    <button onclick="logout()">Logout</button>
+</div>
+
+<div class="dashboard-container">
+
+    <h1 class="welcome-text">
+        Welcome, <span id="welcome"></span>
+    </h1>
+
+    <div class="dashboard-grid">
+
+        <!-- Lost & Found Section -->
+        <div class="dashboard-section">
+            <h3>Lost & Found</h3>
+            <div class="section-buttons">
+                <button onclick="goReport()">Report Lost Item</button>
+                <button onclick="goView()">View Lost Items</button>
+            </div>
+        </div>
+
+        <!-- Venue Booking Section -->
+        <div class="dashboard-section">
+            <h3>Venue Booking</h3>
+            <div class="section-buttons">
+                <button onclick="goBook()">Book Venue</button>
+                <button onclick="goBookings()">My Bookings</button>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+if (!localStorage.getItem("currentUser")) {
+    window.location = "login.html";
+}
+
+document.getElementById("welcome").innerText =
+    localStorage.getItem("currentUser");
+
+function goReport(){ window.location="report.html"; }
+function goView(){ window.location="view.html"; }
+function goBook(){ window.location="book-hall.html"; }
+function goBookings(){ window.location="bookings.html"; }
+
+function logout(){
+    localStorage.removeItem("currentUser");
+    window.location="login.html";
+}
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <div class="card">
+        <h2 style="text-align:center;">Login</h2>
+
+        <input type="email" id="email" placeholder="Email" required>
+        <input type="password" id="password" placeholder="Password" required>
+
+        <button class="btn" onclick="login()">Login</button>
+
+        <p style="text-align:center; margin-top:15px;">
+            No account? <a href="signup.html">Signup</a>
+        </p>
+    </div>
+</div>
+
+<script>
+
+function login() {
+
+    let email = document.getElementById("email").value.trim();
+    let password = document.getElementById("password").value.trim();
+
+    if (email === "" || password === "") {
+        alert("Please fill all fields.");
+        return;
+    }
+
+    let storedData = localStorage.getItem(email);
+
+    if (!storedData) {
+        alert("User not found. Please signup.");
+        return;
+    }
+
+    let user = JSON.parse(storedData);
+
+    if (user.password === password) {
+
+        // Save logged in user
+        localStorage.setItem("currentUser", user.username);
+        localStorage.setItem("currentEmail", email);
+
+        alert("Login successful!");
+
+        window.location = "dashboard.html";
+
+    } else {
+        alert("Incorrect password.");
+    }
+}
+
+// Allow Enter key login
+document.addEventListener("keypress", function(e) {
+    if (e.key === "Enter") {
+        login();
+    }
+});
+
+// If already logged in → go to dashboard
+if (localStorage.getItem("currentUser")) {
+    window.location = "dashboard.html";
+}
+
+</script>
+
+</body>
+</html>

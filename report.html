@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Report Item</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="navbar">
+    <h2>Report Item</h2>
+    <button onclick="goBack()">Back</button>
+</div>
+
+<div class="container">
+    <div class="card">
+        <select id="type" onchange="toggleImage()">
+            <option value="Lost">Lost</option>
+            <option value="Found">Found</option>
+        </select>
+
+        <input type="text" id="reporterName" placeholder="Your Name" required>
+        <input type="email" id="reporterEmail" placeholder="Your Email" required>
+        
+        <input type="text" id="name" placeholder="Item Name" required>
+        <input type="text" id="category" placeholder="Category" required>
+        <input type="text" id="location" placeholder="Location" required>
+        <input type="date" id="date" required>
+        <textarea id="description" placeholder="Description" required></textarea>
+
+        <div id="imageSection" style="display:none;">
+            <input type="file" id="image" accept="image/*">
+        </div>
+
+        <button class="btn" onclick="saveItem()">Submit</button>
+    </div>
+</div>
+
+<script>
+if (!localStorage.getItem("currentUser")) {
+    window.location = "login.html";
+}
+
+function goBack() {
+    window.location = "dashboard.html";
+}
+
+function toggleImage() {
+    let type = document.getElementById("type").value;
+    let imageSection = document.getElementById("imageSection");
+    imageSection.style.display = (type === "Found") ? "block" : "none";
+}
+
+async function saveItem() {
+    let type = document.getElementById("type").value;
+    let reporterName = document.getElementById("reporterName").value.trim();
+    let reporterEmail = document.getElementById("reporterEmail").value.trim();
+    let name = document.getElementById("name").value.trim();
+    let category = document.getElementById("category").value.trim();
+    let location = document.getElementById("location").value.trim();
+    let date = document.getElementById("date").value;
+    let description = document.getElementById("description").value.trim();
+    let imageInput = document.getElementById("image");
+
+    if (!reporterName || !reporterEmail || !name || !category || !location || !date || !description) {
+        alert("Please fill all fields.");
+        return;
+    }
+
+    let imageData = "";
+    if (type === "Found" && imageInput.files[0]) {
+        imageData = await new Promise(resolve => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.readAsDataURL(imageInput.files[0]);
+        });
+    }
+
+    const item = {
+        type,
+        reporterName,   // Added field
+        reporterEmail,  // Added field
+        name,
+        category,
+        location,
+        date,
+        description,
+        image: imageData,
+        user: localStorage.getItem("currentUser"),
+        status: type === "Lost" ? "Searching" : "Available"
+    };
+
+    try {
+        const response = await fetch('http://localhost:3000/api/items', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(item)
+        });
+
+        if (response.ok) {
+            alert("Item submitted successfully!");
+            window.location = "view.html";
+        } else {
+            alert("Server error. Could not save item.");
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Is your server running? Check terminal for ECONNREFUSED.");
+    }
+}
+</script>
+</body>
+</html>

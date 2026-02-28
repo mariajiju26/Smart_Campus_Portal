@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Bookings</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Navbar -->
+<div class="navbar">
+    <h2>Smart Campus Portal</h2>
+    <button onclick="goDashboard()">Dashboard</button>
+</div>
+
+<div class="container">
+    <div class="card">
+        <h2 style="text-align:center;">My Bookings</h2>
+        <div id="bookingList"></div>
+    </div>
+</div>
+
+<script>
+
+// 🔐 Protect page
+if (!localStorage.getItem("currentUser")) {
+    window.location = "login.html";
+}
+
+let currentUser = localStorage.getItem("currentUser");
+let bookings = JSON.parse(localStorage.getItem("bookings")) || [];
+let container = document.getElementById("bookingList");
+
+function displayBookings() {
+
+    container.innerHTML = "";
+
+    let userBookings = bookings.filter(b => b.user === currentUser);
+
+    if (userBookings.length === 0) {
+        container.innerHTML = "<p style='text-align:center;'>No bookings found.</p>";
+        return;
+    }
+
+    userBookings.forEach((b, index) => {
+
+        let venueDisplay = b.venue;
+
+        if (b.venue === "Classroom" && b.classroom) {
+            venueDisplay += " - " + b.classroom;
+        }
+
+        if (b.venue === "Other" && b.otherVenue) {
+            venueDisplay += " - " + b.otherVenue;
+        }
+
+        container.innerHTML += `
+            <div class="item-card">
+                <p><b>Venue:</b> ${venueDisplay}</p>
+                <p><b>Event:</b> ${b.event}</p>
+                <p><b>Date:</b> ${b.date}</p>
+                <p><b>Time:</b> ${b.start} - ${b.end}</p>
+                <p><b>Status:</b> ${b.status}</p>
+
+                <button class="lost-btn" onclick="cancelBooking(${bookings.indexOf(b)})">
+                    Cancel
+                </button>
+
+                <button class="view-btn" onclick="changeVenue(${bookings.indexOf(b)})">
+                    Change Venue
+                </button>
+            </div>
+        `;
+    });
+}
+
+function cancelBooking(index) {
+    if (confirm("Are you sure you want to cancel this booking?")) {
+        bookings[index].status = "Cancelled";
+        localStorage.setItem("bookings", JSON.stringify(bookings));
+        displayBookings();
+    }
+}
+
+function changeVenue(index) {
+
+    let newVenue = prompt(
+        "Enter new venue:\nSeminar Hall 1\nSeminar Hall 2\nSeminar Hall 3\nSeminar Hall 4\nOAT\nClassroom\nOther"
+    );
+
+    if (!newVenue) return;
+
+    bookings[index].venue = newVenue;
+
+    if (newVenue === "Classroom") {
+        let room = prompt("Enter Classroom Number:");
+        bookings[index].classroom = room || "";
+    } else {
+        bookings[index].classroom = "";
+    }
+
+    if (newVenue === "Other") {
+        let other = prompt("Specify other venue:");
+        bookings[index].otherVenue = other || "";
+    } else {
+        bookings[index].otherVenue = "";
+    }
+
+    bookings[index].status = "Updated";
+
+    localStorage.setItem("bookings", JSON.stringify(bookings));
+    displayBookings();
+}
+
+function goDashboard() {
+    window.location = "dashboard.html";
+}
+
+displayBookings();
+
+</script>
+
+</body>
+</html>
